@@ -3,8 +3,10 @@ pragma solidity ^0.8.0;
 
 
 contract satisWhiteListAddress {
+    address public owner;
     mapping (address => uint256) whiteList;
     event whiteListed(address acceptedAddress);
+    event changeOwnership(address newOwner);
 
     modifier isOwner() {
         require (msg.sender == owner, "Not an admin");
@@ -22,17 +24,16 @@ contract satisWhiteListAddress {
     /**
      * @dev Transfer the ownership of this contract.
      */
-    function transferOwnership(address _newOwner) public isOwner returns(address _newAddress) {
+    function transferOwnership(address _newOwner) public isOwner {
         owner = _newOwner;
-        _newAddress = owner;
+        emit changeOwnership(owner);
     }
 
     /**
      * @dev Add address to whitelist by contract owner.
      */
-    function addWhiteList(address _acceptedAddress) external isOwner returns(uint256 _whiteListBoolean) {
+    function addWhiteList(address _acceptedAddress) external isOwner {
         whiteList[_acceptedAddress] = 1;
-        _whiteListBoolean = whiteList[_acceptedAddress];
         emit whiteListed(_acceptedAddress);
     }
 

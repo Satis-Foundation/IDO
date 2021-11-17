@@ -544,31 +544,38 @@ library SafeERC20 {
 /**
  * This is the smart contract for purchasing tokens on IDO.
  */
-import "./abstractWhiteList.sol";
 
 contract satisIDO {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    address constant public usdcAddressL1 = 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48;
-    address constant public satisTokenAddress = 0xAAABBBCCC;
-    IERC20 usdcToken = IERC20(usdcAddressL1);
-    IERC20 satisToken = IERC20(satisTokenAddress);
+    address public owner;
+    address public usdcAddressL1; // = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public satisTokenAddress; // = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    IERC20 usdcToken; // = IERC20(usdcAddressL1);
+    IERC20 satisToken; // = IERC20(satisTokenAddress);
+    mapping (address => uint256) whiteList;
     mapping (address => uint256) clientBalance;
     mapping (address => uint256) collectTokenRecord; // 0 for not yet collected, 1 for collected already
     uint256 totalUSDC = 0;
-    uint256 totalSatisTokenSupply = 100000000000000000000000000;
+    uint256 totalSatisTokenSupply; // = 100000000000000000000000000;
     uint256 startTime = 3000000000; // Unix timestamp in far far future
     uint256 endTime = 3000000001; // Unix timestamp in far far future
 
 
+    event changeOwnership(address newOwner);
     event depositInto(address senderAddress, uint depositValue);
     event withdrawOutFrom(address receiverAddress, uint withdrawValue);
     event collectSatisToken(address recerverAddress, uint obtainValue);
 
     modifier isOwner() {
         require (msg.sender == owner, "Not an admin");
+        _;
+    }
+
+    modifier correctSignatureLength(bytes memory _targetSignature) {
+        require (_targetSignature.length == 65, "Incorrect signature length");
         _;
     }
     
@@ -578,31 +585,37 @@ contract satisIDO {
     }
 
     modifier isDepositPeriod() {
-        require (now >= startTime && now < endTime, "Not in deposit period");
+        require ((block.timestamp >= startTime) && (block.timestamp <= endTime), "Not in deposit period");
         _;
     }
 
     modifier depositPeriodIsEnded() {
-        require (now >= endTime, "Deposit period not ended yet");
+        require (block.timestamp >= endTime.add(1), "Deposit period not ended yet");
         _;
     }
 
     modifier ownShare() {
-        require (clientBalance[msg.sender] > 0, "You do not own any share")
+        require (clientBalance[msg.sender] > 0, "You do not own any share");
         _;
     }
 
 
-    constructor() {
+
+    constructor(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken) {
         owner = msg.sender;
+        usdcAddressL1 = _fakeUSDCAddress;
+        satisTokenAddress = _fakeSatisTokenAddress;
+        usdcToken = IERC20(usdcAddressL1);
+        satisToken = IERC20(satisTokenAddress);
+        totalSatisTokenSupply = _totalSupplyFakeSatisToken;
     }
 
     /**
      * @dev Transfer the ownership of this contract.
      */
-    function transferOwnership(address _newOwner) public isOwner returns(address _newAddress) {
+    function transferOwnership(address _newOwner) public isOwner {
         owner = _newOwner;
-        _newAddress = owner;
+        emit changeOwnership(owner);
     }
 
     function recoverSignature(bytes32 _targetHash, bytes memory _targetSignature) public pure correctSignatureLength(_targetSignature) returns(address) {
@@ -646,22 +659,36 @@ contract satisIDO {
      * @dev Trigger the start of IDO. End in 48 hrs (172800 secs). 
      */
     function startIDO() public isOwner {
-        startTime = now;
-        endTime = startTime + 10;
+        startTime = block.timestamp;
+        endTime = startTime + 5;
     }
 
-    function getAutionTimeLeft() external view isDepositPeriod returns(uint256 _timeLeft) {
-        _timeLeft = endTime.sub(now);
+    function getAuctionTimeLeft() external view isDepositPeriod returns(uint256 _timeLeft) {
+        if (block.timestamp >= endTime) {
+            _timeLeft = 0;
+        } else{
+            _timeLeft = endTime.sub(block.timestamp);
+        }
     }
 
-    function depositAssets(uint256 _usdcValue, address, _whiteListContractAddress, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
-        abstractWhiteListAddress whiteList = abstractWhiteListAddress(_whiteListContractAddress);
-        onWhiteList = whiteList.viewWhiteList(_recoveredAddress);
-        if (onWhiteList != 1) {
+    function getStartTime() external view returns(uint256 _startTime) {
+        _startTime = startTime;
+    }
+
+    function getEndTime() external view returns(uint256 _endTime) {
+        _endTime = endTime;
+    }
+
+    function getCurrentTime() external view returns(uint256 _currentTime) {
+        _currentTime = block.timestamp;
+    }
+
+    function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
+        if (whiteList[msg.sender] != 1) {
             address _recoveredAddress;
             _recoveredAddress = recoverSignature(_hashForRecover, _targetSignature);
             require (_recoveredAddress == msg.sender, 'Not an EOA');
-            whiteList.addWhiteList(_recoveredAddress);
+            whiteList[_recoveredAddress] = 1;
         }
         usdcToken.safeTransferFrom(msg.sender, address(this), _usdcValue);
         clientBalance[msg.sender] = clientBalance[msg.sender].add(_usdcValue);
@@ -669,7 +696,7 @@ contract satisIDO {
         emit depositInto(msg.sender, _usdcValue);
     }
 
-    function withdrawAssets(uint256 _usdcValue) external isDepositPeriod enoughMobileAssets(_tokenValue) {
+    function withdrawAssets(uint256 _usdcValue) external isDepositPeriod enoughMobileAssets(_usdcValue) {
         usdcToken.safeTransfer(msg.sender, _usdcValue);
         clientBalance[msg.sender] = clientBalance[msg.sender].sub(_usdcValue);
         totalUSDC = totalUSDC.sub(_usdcValue);
@@ -684,12 +711,19 @@ contract satisIDO {
         _totalUSDC = totalUSDC;
     }
 
+    function viewWhitelist(address _targetAddress) view external returns(uint256 _whiteListBoolean) {
+        _whiteListBoolean = whiteList[_targetAddress];
+    }
+
     function collectTokens() external depositPeriodIsEnded ownShare {
         require (collectTokenRecord[msg.sender] == 0, "User has collected his/her tokens");
-        uint256 _assetShare;
         uint256 _collectValue;
+        /*
+        uint256 _assetShare;
         _assetShare = clientBalance[msg.sender].div(totalUSDC);
-        _collectValue = _assetShare.mul(totalSatisTokenSupply)
+        _collectValue = _assetShare.mul(totalSatisTokenSupply);
+        */
+        _collectValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         satisToken.safeTransfer(msg.sender,_collectValue);
         collectTokenRecord[msg.sender] = 1;
         emit collectSatisToken(msg.sender,_collectValue);
@@ -699,17 +733,23 @@ contract satisIDO {
         if (collectTokenRecord[msg.sender] == 1) {
             _uncollectedValue = 0;
         } else {
+            /*
             uint256 _assetShare;
-            uint256 _collectValue;
             _assetShare = clientBalance[msg.sender].div(totalUSDC);
             _uncollectedValue = _assetShare.mul(totalSatisTokenSupply);
+            */
+            _uncollectedValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         }
     }
 
+    /*
     function testInitiation(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken) public {
         usdcAddressL1 = _fakeUSDCAddress;
         satisTokenAddress = _fakeSatisTokenAddress;
         totalSatisTokenSupply = _totalSupplyFakeSatisToken;
+        IERC20 usdcToken = IERC20(usdcAddressL1);
+        IERC20 satisToken = IERC20(satisTokenAddress);
     }
+    */
 
 }
