@@ -9,8 +9,8 @@ function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
 }
 
-describe ("Collecting tokens", function() {
-    it ("Token collection", async function() {
+describe ("No share", function() {
+    it ("Token collection with no share", async function() {
 
         const signers = await ethers.getSigners();
 
