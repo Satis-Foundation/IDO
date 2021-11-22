@@ -551,15 +551,15 @@ contract satisIDO {
     using SafeMath for uint256;
 
     address public owner;
-    address public usdcAddressL1; // = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public satisTokenAddress; // = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    IERC20 usdcToken; // = IERC20(usdcAddressL1);
-    IERC20 satisToken; // = IERC20(satisTokenAddress);
+    address public usdcAddressL1 = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // Ethereum L1 USDC address, edit if need.
+    address public satisTokenAddress = 0x0000000000000000000000000000000000000000; // Ethereum L1 Satis token address, input need.
+    IERC20 usdcToken = IERC20(usdcAddressL1);
+    IERC20 satisToken = IERC20(satisTokenAddress);
     mapping (address => uint256) whiteList;
     mapping (address => uint256) clientBalance;
     mapping (address => uint256) collectTokenRecord; // 0 for not yet collected, 1 for collected already
     uint256 totalUSDC = 0;
-    uint256 totalSatisTokenSupply; // = 100000000000000000000000000;
+    uint256 totalSatisTokenSupply = 10000000000000000000000; // Total supply of Satis token to this contract, input need.
     uint256 startTime = 3000000000; // Unix timestamp in far far future
     uint256 endTime = 3000000001; // Unix timestamp in far far future
 
@@ -601,13 +601,8 @@ contract satisIDO {
 
 
 
-    constructor(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken) {
+    constructor() {
         owner = msg.sender;
-        usdcAddressL1 = _fakeUSDCAddress;
-        satisTokenAddress = _fakeSatisTokenAddress;
-        usdcToken = IERC20(usdcAddressL1);
-        satisToken = IERC20(satisTokenAddress);
-        totalSatisTokenSupply = _totalSupplyFakeSatisToken;
     }
 
     /**
@@ -618,6 +613,9 @@ contract satisIDO {
         emit changeOwnership(owner);
     }
 
+    /**
+     * @dev Recover signature from client, used for EOA address check.
+     */
     function recoverSignature(bytes32 _targetHash, bytes memory _targetSignature) public pure correctSignatureLength(_targetSignature) returns(address) {
         bytes32 _r;
         bytes32 _s;
@@ -660,9 +658,12 @@ contract satisIDO {
      */
     function startIDO() public isOwner {
         startTime = block.timestamp;
-        endTime = startTime + 5;
+        endTime = startTime + 172800;
     }
 
+    /**
+     * @dev Get estimated auction time left with block.timestamp, with UNIX timestamp.
+     */
     function getAuctionTimeLeft() external view isDepositPeriod returns(uint256 _timeLeft) {
         if (block.timestamp >= endTime) {
             _timeLeft = 0;
@@ -671,18 +672,30 @@ contract satisIDO {
         }
     }
 
+    /**
+     * @dev Get start time of the IDO auction, in UNIX timestamp.
+     */
     function getStartTime() external view returns(uint256 _startTime) {
         _startTime = startTime;
     }
 
+    /**
+     * @dev Get end time of the IDO auciton, in UNIX timestamp.
+     */
     function getEndTime() external view returns(uint256 _endTime) {
         _endTime = endTime;
     }
 
+    /**
+     * @dev Get estimated current time with block.timestamp, in UNIX timestamp.
+     */
     function getCurrentTime() external view returns(uint256 _currentTime) {
         _currentTime = block.timestamp;
     }
 
+    /**
+     * @dev Clients deposit assets to IDO in auction period.
+     */
     function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
         if (whiteList[msg.sender] != 1) {
             address _recoveredAddress;
@@ -696,6 +709,9 @@ contract satisIDO {
         emit depositInto(msg.sender, _usdcValue);
     }
 
+    /**
+     * @dev Clients withdraw assets from IDO, during auction period.
+     */
     function withdrawAssets(uint256 _usdcValue) external isDepositPeriod enoughMobileAssets(_usdcValue) {
         usdcToken.safeTransfer(msg.sender, _usdcValue);
         clientBalance[msg.sender] = clientBalance[msg.sender].sub(_usdcValue);
@@ -703,53 +719,54 @@ contract satisIDO {
         emit withdrawOutFrom(msg.sender, _usdcValue);
     }
 
+    /**
+     * @dev View personal deposited assets.
+     */
     function viewPersonalAssets() view external returns(uint256 _personalUSDC) {
         _personalUSDC = clientBalance[msg.sender];
     }
 
+    /**
+     * @dev View total assets in this IDO (from all clients/bidder). 
+     */
     function viewTotalAssetsInContract() view external returns(uint256 _totalUSDC) {
         _totalUSDC = totalUSDC;
     }
 
+    /**
+     * @dev View whitelisted address, verified as an EOA.
+     */
     function viewWhitelist(address _targetAddress) view external returns(uint256 _whiteListBoolean) {
         _whiteListBoolean = whiteList[_targetAddress];
     }
 
+    /**
+     * @dev Clients collect tokens after auction period (only once per client, withdraw all available tokens).
+     */
     function collectTokens() external depositPeriodIsEnded ownShare {
         require (collectTokenRecord[msg.sender] == 0, "User has collected his/her tokens");
         uint256 _collectValue;
-        /*
-        uint256 _assetShare;
-        _assetShare = clientBalance[msg.sender].div(totalUSDC);
-        _collectValue = _assetShare.mul(totalSatisTokenSupply);
-        */
         _collectValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         satisToken.safeTransfer(msg.sender,_collectValue);
-        collectTokenRecord[msg.sender] = 1;
+        collectTokenRecord[msg.sender] = 1; // 0 --> not yet collected, 1 --> collected
         emit collectSatisToken(msg.sender,_collectValue);
     }
 
+    /**
+     * @dev View uncollected tokens share.
+     */
     function viewUncollectedTokens() view external depositPeriodIsEnded ownShare returns(uint256 _uncollectedValue) {
         if (collectTokenRecord[msg.sender] == 1) {
             _uncollectedValue = 0;
         } else {
-            /*
-            uint256 _assetShare;
-            _assetShare = clientBalance[msg.sender].div(totalUSDC);
-            _uncollectedValue = _assetShare.mul(totalSatisTokenSupply);
-            */
             _uncollectedValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         }
     }
 
-    /*
-    function testInitiation(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken) public {
-        usdcAddressL1 = _fakeUSDCAddress;
-        satisTokenAddress = _fakeSatisTokenAddress;
-        totalSatisTokenSupply = _totalSupplyFakeSatisToken;
-        IERC20 usdcToken = IERC20(usdcAddressL1);
-        IERC20 satisToken = IERC20(satisTokenAddress);
+    function ownerCollectFund() public isOwner depositPeriodIsEnded {
+        require (totalUSDC >= 0, "All assets have already been collected");
+        usdcToken.safeTransfer(owner,totalUSDC);
+        totalUSDC = 0;
     }
-    */
 
 }
