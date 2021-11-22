@@ -559,6 +559,7 @@ contract satisIDO {
     mapping (address => uint256) clientBalance;
     mapping (address => uint256) collectTokenRecord; // 0 for not yet collected, 1 for collected already
     uint256 totalUSDC = 0;
+    uint256 totalClient = 0;
     uint256 totalSatisTokenSupply = 10000000000000000000000; // Total supply of Satis token to this contract, input need.
     uint256 startTime = 3000000000; // Unix timestamp in far far future
     uint256 endTime = 3000000001; // Unix timestamp in far far future
@@ -702,6 +703,7 @@ contract satisIDO {
             _recoveredAddress = recoverSignature(_hashForRecover, _targetSignature);
             require (_recoveredAddress == msg.sender, 'Not an EOA');
             whiteList[_recoveredAddress] = 1;
+            totalClient += 1;
         }
         usdcToken.safeTransferFrom(msg.sender, address(this), _usdcValue);
         clientBalance[msg.sender] = clientBalance[msg.sender].add(_usdcValue);
@@ -741,6 +743,13 @@ contract satisIDO {
     }
 
     /**
+     * @dev  View total number of approved addresses.
+     */
+    function viewTotalWhitelistedAddress() view external returns(uint256 _totalClient) {
+        _totalClient = totalClient;
+    }
+
+    /**
      * @dev Clients collect tokens after auction period (only once per client, withdraw all available tokens).
      */
     function collectTokens() external depositPeriodIsEnded ownShare {
@@ -763,6 +772,9 @@ contract satisIDO {
         }
     }
 
+    /**
+     * @dev Allow owner to collect all the funds after auction.
+     */
     function ownerCollectFund() public isOwner depositPeriodIsEnded {
         require (totalUSDC >= 0, "All assets have already been collected");
         usdcToken.safeTransfer(owner,totalUSDC);
