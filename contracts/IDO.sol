@@ -748,7 +748,7 @@ contract satisIDO {
         uint256 _collectValue;
         _collectValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         satisToken.safeTransfer(msg.sender,_collectValue);
-        collectTokenRecord[msg.sender] = 1;
+        collectTokenRecord[msg.sender] = 1; // 0 --> not yet collected, 1 --> collected
         emit collectSatisToken(msg.sender,_collectValue);
     }
 
@@ -761,6 +761,12 @@ contract satisIDO {
         } else {
             _uncollectedValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         }
+    }
+
+    function ownerCollectFund() public isOwner depositPeriodIsEnded {
+        require (totalUSDC >= 0, "All assets have already been collected");
+        usdcToken.safeTransfer(owner,totalUSDC);
+        totalUSDC = 0;
     }
 
 }
