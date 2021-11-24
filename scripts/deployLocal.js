@@ -1,3 +1,5 @@
+const { ethers } = require("hardhat");
+
 async function main() {
     
     const [deployer] = await ethers.getSigners();
@@ -6,9 +8,18 @@ async function main() {
     const balance = await deployer.getBalance();
     console.log('Account balance = ', balance.toString());
 
-    const moniesPull = await ethers.getContractFactory('moniesPull');
-    const contractMoniesPull = await moniesPull.deploy();
-    console.log('Contract address: ', contractMoniesPull.address);
+    const fakeUSDC = await ethers.getContractFactory('fakeUSDC');
+    const contractFakeUSDC = await fakeUSDC.deploy();
+    console.log('Local USDC address: ', contractFakeUSDC.address);
+
+    const satisToken = await ethers.getContractFactory('satisToken');
+    const contractSatisToken = await satisToken.deploy();
+    console.log('Local Satis Token address: ', contractSatisToken.address);
+
+    totalTokenSupply = ;
+    const ido = await ethers.getContractFactory('satisIDO');
+    const contractIDO = await ido.deploy(contractFakeUSDC.address, contractSatisToken.address, totalTokenSupply);
+    console.log('Local IDO contract address: ', contractIDO.address);
 }
 
 main()
