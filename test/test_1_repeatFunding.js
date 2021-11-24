@@ -96,6 +96,8 @@ describe ("Test repeat add fund", function() {
         signatureX = await clientX.signMessage(messageBytes);
         signatureY = await clientY.signMessage(messageBytes);
         signatureZ = await clientZ.signMessage(messageBytes);
+        console.log("Hashed - This is an EOA");
+        console.log(contractReceiveHash);
 
         /*
         let sumSatisToken = 500000;
