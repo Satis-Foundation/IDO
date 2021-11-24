@@ -1,0 +1,319 @@
+[
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "changeOwnership",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "recerverAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "obtainValue",
+				"type": "uint256"
+			}
+		],
+		"name": "collectSatisToken",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "senderAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "depositValue",
+				"type": "uint256"
+			}
+		],
+		"name": "depositInto",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "receiverAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "withdrawValue",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawOutFrom",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "collectTokens",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_usdcValue",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "_hashForRecover",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_targetSignature",
+				"type": "bytes"
+			}
+		],
+		"name": "depositAssets",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAuctionTimeLeft",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_timeLeft",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getCurrentTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_currentTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getEndTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_endTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getStartTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_startTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "_targetHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_targetSignature",
+				"type": "bytes"
+			}
+		],
+		"name": "recoverSignature",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "satisTokenAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_auctionTime",
+				"type": "uint256"
+			}
+		],
+		"name": "startIDO",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "usdcAddressL1",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "viewPersonalAssets",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_personalUSDC",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "viewTotalAssetsInContract",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_totalUSDC",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "viewUncollectedTokens",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_uncollectedValue",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_targetAddress",
+				"type": "address"
+			}
+		],
+		"name": "viewWhitelist",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "_whiteListBoolean",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_usdcValue",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawAssets",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
