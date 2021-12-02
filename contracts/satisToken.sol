@@ -25,11 +25,16 @@ contract satisToken is ERC20 {
         _mint(msg.sender, 1000000 * 10 ** 18);
     }
 
+    /*
     function minting(address _recipient, uint256 _amount) external isOwner {
         _mint(_recipient, _amount * 10 ** 18);
         emit mintToken(_recipient, _amount);
     }
+    */
 
+    /**
+     * @dev Burn tokens
+     */
     function burning(uint256 _amount) external {
         _burn(msg.sender, _amount);
         emit burnToken(msg.sender, _amount);
