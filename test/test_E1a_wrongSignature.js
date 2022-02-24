@@ -60,8 +60,8 @@ describe ("Add fund with wrong signature", function() {
         console.log("IDO contract Owner: " + idoContractOwnerAddress);
 
         let sumSatisToken = 500000;
-        const idoContract = await ethers.getContractFactory("satisIDO", idoContractOwner);
-        const ido = await idoContract.deploy(fakeUSDCAddress,satisTokenAddress,sumSatisToken);
+        const idoContract = await ethers.getContractFactory("satisIDORemixWhitelist", idoContractOwner);
+        const ido = await idoContract.deploy(fakeUSDCAddress,satisTokenAddress,sumSatisToken,10);
         console.log("IDO deployed");
 
         const idoAddress = ido.address;
@@ -85,6 +85,9 @@ describe ("Add fund with wrong signature", function() {
         await usdc.connect(clientX).approve(idoAddress,1000);
         await usdc.connect(clientY).approve(idoAddress,1000);
         await usdc.connect(clientZ).approve(idoAddress,1000);
+
+        //Whitelist clients
+        await ido.connect(idoContractOwner).addUserWhiteList([clientX_address,clientY_address,clientZ_address]);
 
         //Sign the verification signature
         let rawMessage = "This is an EOA";
@@ -119,7 +122,7 @@ describe ("Add fund with wrong signature", function() {
         expect (usdcValueX).to.equal(500);
         usdcTotal = await ido.connect(clientX).viewTotalAssetsInContract();
         expect (usdcTotal).to.equal(500);
-        let whiteListBoolean = await ido.connect(clientX).viewWhitelist(clientX_address);
+        let whiteListBoolean = await ido.connect(clientX).viewEOAWhitelist(clientX_address);
         console.log("Whitelist status: " + whiteListBoolean);
         //console.log(contractReceiveHash);
         //console.log(signatureX);
