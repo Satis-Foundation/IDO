@@ -9,8 +9,8 @@ function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
 }
 
-describe ("Add fund after auction", function() {
-    it ("Add after auction ended", async function() {
+describe ("Test remove whitelister", function() {
+    it ("Remove whitelister after staring auction", async function() {
 
         const signers = await ethers.getSigners();
 
@@ -61,7 +61,7 @@ describe ("Add fund after auction", function() {
 
         let sumSatisToken = 500000;
         const idoContract = await ethers.getContractFactory("satisIDORemixWhitelist", idoContractOwner);
-        const ido = await idoContract.deploy(fakeUSDCAddress,satisTokenAddress,sumSatisToken,5);
+        const ido = await idoContract.deploy(fakeUSDCAddress,satisTokenAddress,sumSatisToken,10);
         console.log("IDO deployed");
 
         const idoAddress = ido.address;
@@ -77,6 +77,8 @@ describe ("Add fund after auction", function() {
         const clientY_address = await clientY.getAddress();
         const clientZ = signers[4];
         const clientZ_address = await clientZ.getAddress();
+        const clientA = signers[5];
+        const clientA_address = await clientA.getAddress();
 
         await usdc.connect(fakeUSDCOwner).transfer(idoContractOwnerAddress,5000);
         await usdc.connect(fakeUSDCOwner).transfer(clientX_address,1000);
@@ -88,6 +90,10 @@ describe ("Add fund after auction", function() {
 
         //Whitelist clients
         await ido.connect(idoContractOwner).addUserWhiteList([clientX_address,clientY_address,clientZ_address]);
+        const testBool = await ido.connect(idoContractOwner).viewUserWhiteList(clientX_address);
+        expect (testBool).to.equal(1);
+        const testBool2 = await ido.connect(clientX).viewUserWhiteList(clientA_address);
+        expect (testBool2).to.equal(0);
 
         //Sign the verification signature
         let rawMessage = "This is an EOA";
@@ -109,15 +115,21 @@ describe ("Add fund after auction", function() {
         console.log("Initialization completed");
 
 
+
         // Start auction
         await ido.connect(idoContractOwner).startIDO();
         console.log("Auction started");
-        // Wait for 5+1 seconds
-        await delay(6000);
+        // Wait for 1 seconds
+        await delay(1000);
         await usdc.connect(fakeUSDCOwner).transfer(idoContractOwnerAddress,10);
 
+        await ido.connect(idoContractOwner).removeUserWhiteList([clientX_address,clientY_address]);
+        const testBool3 = await ido.connect(idoContractOwner).viewUserWhiteList(clientZ_address);
+        expect (testBool3).to.equal(1);
+        const testBool4 = await ido.connect(idoContractOwner).viewUserWhiteList(clientX_address);
+        expect (testBool4).to.equal(0);
         
-        await ido.connect(clientX).depositAssets(500,randomHash,randomSignature);
+        await ido.connect(clientX).depositAssets(500,contractReceiveHash,signatureX);
         usdcValueX = await ido.connect(clientX).viewPersonalAssets();
         expect (usdcValueX).to.equal(500);
         usdcTotal = await ido.connect(clientX).viewTotalAssetsInContract();
@@ -126,6 +138,14 @@ describe ("Add fund after auction", function() {
         console.log("Whitelist status: " + whiteListBoolean);
         //console.log(contractReceiveHash);
         //console.log(signatureX);
+
+        await ido.connect(clientX).depositAssets(300,randomHash,randomSignature);
+        usdcValueX = await ido.connect(clientX).viewPersonalAssets();
+        expect (usdcValueX).to.equal(800);
+        usdcTotal = await ido.connect(clientX).viewTotalAssetsInContract();
+        expect (usdcTotal).to.equal(800);
+        whiteListBoolean = await ido.connect(clientX).viewEOAWhitelist(clientX_address);
+        console.log("Whitelist status " + whiteListBoolean);
 
     })
 }) 
