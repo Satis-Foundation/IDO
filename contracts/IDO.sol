@@ -747,8 +747,8 @@ contract satisIDO {
      */
     function viewCurrentSatisTokenPrice() view external returns(uint256 _currentPrice) {
         uint256 _depositToSupplyRatio = totalUSDC/totalSatisTokenSupply;
-        if (_depositToSupplyRatio < 800) {
-            _currentPrice = 800;
+        if (_depositToSupplyRatio < 1000) {
+            _currentPrice = 1000;
         } else {
             _currentPrice = _depositToSupplyRatio;
         }
