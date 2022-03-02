@@ -552,23 +552,27 @@ contract satisIDO {
 
     address public owner;
     address public usdcAddressL1 = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // Ethereum L1 USDC address, edit if need.
-    address public satisTokenAddress = 0x0000000000000000000000000000000000000000; // Ethereum L1 Satis token address, input need.
+    address public satisTokenAddress = 0x925181b7Ed20c27ca7Cfa8156f62e0B9Df46c22B; // Ethereum L1 Satis token address, input need.
     IERC20 usdcToken = IERC20(usdcAddressL1);
     IERC20 satisToken = IERC20(satisTokenAddress);
-    mapping (address => uint256) whiteList;
+    mapping (address => uint256) EOA_whiteList;
     mapping (address => uint256) clientBalance;
     mapping (address => uint256) collectTokenRecord; // 0 for not yet collected, 1 for collected already
     uint256 totalUSDC = 0;
     uint256 totalClient = 0;
-    uint256 totalSatisTokenSupply = 10000000000000000000000; // Total supply of Satis token to this contract, input need.
+    uint256 totalSatisTokenSupply = 10 ** 9 * 10 ** 18; // Total supply of Satis token to this contract, input need.
     uint256 startTime = 3000000000; // Unix timestamp in far far future
     uint256 endTime = 3000000001; // Unix timestamp in far far future
+    uint256 auctionTime = 172800;
+    uint256 minDepositValue = 500 * 10 ** 6;
 
 
     event changeOwnership(address newOwner);
     event depositInto(address senderAddress, uint depositValue);
     event withdrawOutFrom(address receiverAddress, uint withdrawValue);
     event collectSatisToken(address recerverAddress, uint obtainValue);
+    event userWhiteListed(address[] whiteListedUsers);
+    event userWhiteListRemoved(address[] removedUsers);
 
     modifier isOwner() {
         require (msg.sender == owner, "Not an admin");
@@ -659,7 +663,7 @@ contract satisIDO {
      */
     function startIDO() public isOwner {
         startTime = block.timestamp;
-        endTime = startTime + 172800;
+        endTime = startTime + auctionTime;
     }
 
     /**
@@ -698,11 +702,12 @@ contract satisIDO {
      * @dev Clients deposit assets to IDO in auction period.
      */
     function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
-        if (whiteList[msg.sender] != 1) {
+        if (EOA_whiteList[msg.sender] != 1) {
+            require (_usdcValue > minDepositValue, 'Minimum initial deposit value not matched');
             address _recoveredAddress;
             _recoveredAddress = recoverSignature(_hashForRecover, _targetSignature);
             require (_recoveredAddress == msg.sender, 'Not an EOA');
-            whiteList[_recoveredAddress] = 1;
+            EOA_whiteList[_recoveredAddress] = 1;
             totalClient += 1;
         }
         usdcToken.safeTransferFrom(msg.sender, address(this), _usdcValue);
@@ -714,12 +719,14 @@ contract satisIDO {
     /**
      * @dev Clients withdraw assets from IDO, during auction period.
      */
-    function withdrawAssets(uint256 _usdcValue) external isDepositPeriod enoughMobileAssets(_usdcValue) {
+     /*
+    function withdrawAssets(uint256 _usdcValue) external isDepositPeriod userIsWhiteListed enoughMobileAssets(_usdcValue) {
         usdcToken.safeTransfer(msg.sender, _usdcValue);
         clientBalance[msg.sender] = clientBalance[msg.sender].sub(_usdcValue);
         totalUSDC = totalUSDC.sub(_usdcValue);
         emit withdrawOutFrom(msg.sender, _usdcValue);
     }
+    */
 
     /**
      * @dev View personal deposited assets.
@@ -736,16 +743,28 @@ contract satisIDO {
     }
 
     /**
+     * @dev View current worth price for Satis Token.
+     */
+    function viewCurrentSatisTokenPrice() view external returns(uint256 _currentPrice) {
+        uint256 _depositToSupplyRatio = totalUSDC/totalSatisTokenSupply;
+        if (_depositToSupplyRatio < 800) {
+            _currentPrice = 800;
+        } else {
+            _currentPrice = _depositToSupplyRatio;
+        }
+    }
+
+    /**
      * @dev View whitelisted address, verified as an EOA.
      */
-    function viewWhitelist(address _targetAddress) view external returns(uint256 _whiteListBoolean) {
-        _whiteListBoolean = whiteList[_targetAddress];
+    function viewEOAWhitelist(address _targetAddress) view external returns(uint256 _whiteListBoolean) {
+        _whiteListBoolean = EOA_whiteList[_targetAddress];
     }
 
     /**
      * @dev  View total number of approved addresses.
      */
-    function viewTotalWhitelistedAddress() view external returns(uint256 _totalClient) {
+    function viewTotalEOAWhitelistedAddress() view external returns(uint256 _totalClient) {
         _totalClient = totalClient;
     }
 
