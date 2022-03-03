@@ -775,7 +775,7 @@ contract satisIDOWhitelist {
      * @dev View current worth price for Satis Token.
      */
     function viewCurrentSatisTokenPrice() view external returns(uint256 _currentPrice) {
-        uint256 _depositToSupplyRatio = totalUSDC/totalSatisTokenSupply;
+        uint256 _depositToSupplyRatio = totalUSDC.mul(10 ** 18).div(totalSatisTokenSupply);
         if (_depositToSupplyRatio < 800) {
             _currentPrice = 800;
         } else {

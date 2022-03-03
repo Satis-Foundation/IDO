@@ -545,7 +545,7 @@ library SafeERC20 {
  * This is the smart contract for purchasing tokens on IDO.
  */
 
-contract satisIDORemix {
+contract satisIDORemixWhitelist {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
@@ -558,6 +558,7 @@ contract satisIDORemix {
     mapping (address => uint256) EOA_whiteList;
     mapping (address => uint256) clientBalance;
     mapping (address => uint256) collectTokenRecord; // 0 for not yet collected, 1 for collected already
+    mapping (address => uint256) userWhiteList;
     uint256 totalUSDC = 0;
     uint256 totalClient = 0;
     uint256 totalSatisTokenSupply; // = 10000000000000000000000; // Total supply of Satis token to this contract, input need.
@@ -576,6 +577,11 @@ contract satisIDORemix {
 
     modifier isOwner() {
         require (msg.sender == owner, "Not an admin");
+        _;
+    }
+
+    modifier userIsWhiteListed() {
+        require (userWhiteList[msg.sender] == 1, "You are not whitelisted yet");
         _;
     }
 
@@ -606,14 +612,16 @@ contract satisIDORemix {
 
 
 
-    constructor(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken, uint256 _auctionTime) {
+    constructor(address _fakeUSDCAddress, address _fakeSatisTokenAddress, uint256 _totalSupplyFakeSatisToken, uint256 _startTime, uint256 _endTime) {
         owner = msg.sender;
+        userWhiteList[owner] = 1;
         usdcAddressL1 = _fakeUSDCAddress;
         satisTokenAddress = _fakeSatisTokenAddress;
         usdcToken = IERC20(usdcAddressL1);
         satisToken = IERC20(satisTokenAddress);
         totalSatisTokenSupply = _totalSupplyFakeSatisToken;
-        auctionTime = _auctionTime;
+        startTime = _startTime;
+        endTime = _endTime;
         minDepositValue = 500 * 10 ** 6;
     }
 
@@ -668,10 +676,34 @@ contract satisIDORemix {
     /**
      * @dev Trigger the start of IDO. End in 48 hrs (172800 secs). 
      */
+    /*
     function startIDO() public isOwner {
         startTime = block.timestamp;
         endTime = startTime + auctionTime;
     }
+    */
+
+    /**
+     * @dev Allow owner to add whitelisted users.
+     */
+    function addUserWhiteList(address[] memory _addAddressList) external isOwner {
+        for(uint256 i=0; i < _addAddressList.length; i++) {
+            userWhiteList[_addAddressList[i]] = 1;
+        }
+        emit userWhiteListed(_addAddressList);
+    }
+
+    /**
+     * @dev Allow owner to remove whitelisted users.
+     */
+     /*
+    function removeUserWhiteList(address[] memory _removeAddressList) external isOwner {
+        for(uint256 i=0; i < _removeAddressList.length; i++) {
+            userWhiteList[_removeAddressList[i]] = 0;
+        }
+        emit userWhiteListRemoved(_removeAddressList);
+    }
+    */
 
     /**
      * @dev Get estimated auction time left with block.timestamp, with UNIX timestamp.
@@ -708,7 +740,7 @@ contract satisIDORemix {
     /**
      * @dev Clients deposit assets to IDO in auction period.
      */
-    function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
+    function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod userIsWhiteListed {
         if (EOA_whiteList[msg.sender] != 1) {
             require (_usdcValue > minDepositValue, 'Minimum initial deposit value not matched');
             address _recoveredAddress;
@@ -754,11 +786,18 @@ contract satisIDORemix {
      */
     function viewCurrentSatisTokenPrice() view external returns(uint256 _currentPrice) {
         uint256 _depositToSupplyRatio = totalUSDC.mul(10 ** 18).div(totalSatisTokenSupply);
-        if (_depositToSupplyRatio < 1000) {
-            _currentPrice = 1000;
+        if (_depositToSupplyRatio < 800) {
+            _currentPrice = 800;
         } else {
             _currentPrice = _depositToSupplyRatio;
         }
+    }
+
+    /**
+     * @dev View whitelisted address approved to join IDO.
+     */
+    function viewUserWhiteList(address _targetAddress) view external returns(uint256 _whiteListBoolean) {
+        _whiteListBoolean = userWhiteList[_targetAddress];
     }
 
     /**
