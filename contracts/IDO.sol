@@ -703,7 +703,7 @@ contract satisIDO {
      */
     function depositAssets(uint256 _usdcValue, bytes32 _hashForRecover, bytes memory _targetSignature) external isDepositPeriod {
         if (EOA_whiteList[msg.sender] != 1) {
-            require (_usdcValue > minDepositValue, 'Minimum initial deposit value not matched');
+            require (_usdcValue >= minDepositValue, 'Minimum initial deposit value not matched');
             address _recoveredAddress;
             _recoveredAddress = recoverSignature(_hashForRecover, _targetSignature);
             require (_recoveredAddress == msg.sender, 'Not an EOA');
