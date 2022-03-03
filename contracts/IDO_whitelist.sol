@@ -774,7 +774,7 @@ contract satisIDOWhitelist {
     /**
      * @dev View current worth price for Satis Token.
      */
-    function viewCurrentSatisTokenPrice() view external returns(uint256 _currentPrice) {
+    function viewCurrentSatisTokenPrice() view public returns(uint256 _currentPrice) {
         uint256 _depositToSupplyRatio = totalUSDC.mul(10 ** 18).div(totalSatisTokenSupply);
         if (_depositToSupplyRatio < 800) {
             _currentPrice = 800;
@@ -805,12 +805,29 @@ contract satisIDOWhitelist {
     }
 
     /**
+     * @dev View Amount of excessive Satis Token in this contract
+     */
+    function viewExcessiveSatisToken() view public depositPeriodIsEnded returns(uint256 _remainingTokens) {
+        uint256 _finalSatisPrice = viewCurrentSatisTokenPrice();
+        if (_finalSatisPrice == 800) {
+            _remainingTokens = totalSatisTokenSupply.sub(totalUSDC.div(800).mul(10 ** 18));
+        } else {
+            _remainingTokens = 0;
+        }
+    }
+
+    /**
      * @dev Clients collect tokens after auction period (only once per client, withdraw all available tokens).
      */
     function collectTokens() external depositPeriodIsEnded ownShare {
         require (collectTokenRecord[msg.sender] == 0, "User has collected his/her tokens");
         uint256 _collectValue;
-        _collectValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
+        uint256 _finalSatisPrice = viewCurrentSatisTokenPrice();
+        if (_finalSatisPrice == 800) {
+            _collectValue = clientBalance[msg.sender].div(800).mul(10 ** 18);
+        } else {
+            _collectValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
+        }
         satisToken.safeTransfer(msg.sender,_collectValue);
         collectTokenRecord[msg.sender] = 1; // 0 --> not yet collected, 1 --> collected
         emit collectSatisToken(msg.sender,_collectValue);
@@ -831,9 +848,14 @@ contract satisIDOWhitelist {
      * @dev Allow owner to collect all the funds after auction.
      */
     function ownerCollectFund() public isOwner depositPeriodIsEnded {
-        require (totalUSDC >= 0, "All assets have already been collected");
+        require (totalUSDC > 0, "All USDC have already been collected");
+        uint256 _remainingSatisTokens = viewExcessiveSatisToken();
         usdcToken.safeTransfer(owner,totalUSDC);
+        if (_remainingSatisTokens > 0) {
+            satisToken.safeTransfer(owner,_remainingSatisTokens);
+        }
         totalUSDC = 0;
+        totalSatisTokenSupply = 0;
     }
 
 }
