@@ -621,7 +621,7 @@ contract satisIDORemixWhitelist {
         satisToken = IERC20(satisTokenAddress);
         totalSatisTokenSupply = _totalSupplyFakeSatisToken;
         auctionTime = _auctionTime;
-        minDepositValue = 500 * 10 ** 18;
+        minDepositValue = 500 * 10 ** 6;
     }
 
     /**
