@@ -839,8 +839,11 @@ contract satisIDOWhitelist {
      * @dev View uncollected tokens share.
      */
     function viewUncollectedTokens() view external depositPeriodIsEnded ownShare returns(uint256 _uncollectedValue) {
+        uint256 _finalSatisPrice = viewCurrentSatisTokenPrice();
         if (collectTokenRecord[msg.sender] == 1) {
             _uncollectedValue = 0;
+        } else if (_finalSatisPrice == 800) {
+            _uncollectedValue = clientBalance[msg.sender].div(1000).mul(10 ** 18);
         } else {
             _uncollectedValue = clientBalance[msg.sender].mul(totalSatisTokenSupply).div(totalUSDC);
         }
