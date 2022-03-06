@@ -565,14 +565,13 @@ contract satisIDO {
     uint256 endTime = 1646582400; // Unix timestamp in far far future
     //uint256 auctionTime = 172800;
     uint256 minDepositValue = 500 * 10 ** 6;
+    uint256 ownerCollectionBoolean = 0;
 
 
     event changeOwnership(address newOwner);
     event depositInto(address senderAddress, uint depositValue);
-    event withdrawOutFrom(address receiverAddress, uint withdrawValue);
     event collectSatisToken(address recerverAddress, uint obtainValue);
-    event userWhiteListed(address[] whiteListedUsers);
-    event userWhiteListRemoved(address[] removedUsers);
+    event ownerCollectAssets(uint _usdcValue, uint _satisTokenValue);
 
     modifier isOwner() {
         require (msg.sender == owner, "Not an admin");
@@ -719,18 +718,6 @@ contract satisIDO {
     }
 
     /**
-     * @dev Clients withdraw assets from IDO, during auction period.
-     */
-     /*
-    function withdrawAssets(uint256 _usdcValue) external isDepositPeriod userIsWhiteListed enoughMobileAssets(_usdcValue) {
-        usdcToken.safeTransfer(msg.sender, _usdcValue);
-        clientBalance[msg.sender] = clientBalance[msg.sender].sub(_usdcValue);
-        totalUSDC = totalUSDC.sub(_usdcValue);
-        emit withdrawOutFrom(msg.sender, _usdcValue);
-    }
-    */
-
-    /**
      * @dev View personal deposited assets.
      */
     function viewPersonalAssets() view external returns(uint256 _personalUSDC) {
@@ -817,14 +804,16 @@ contract satisIDO {
      * @dev Allow owner to collect all the funds after auction.
      */
     function ownerCollectFund() public isOwner depositPeriodIsEnded {
-        require (totalUSDC > 0, "All USDC have already been collected");
+        require (ownerCollectionBoolean == 0, "Owner already collected assets");
         uint256 _remainingSatisTokens = viewExcessiveSatisToken();
         usdcToken.safeTransfer(owner,totalUSDC);
         if (_remainingSatisTokens > 0) {
             satisToken.safeTransfer(owner,_remainingSatisTokens);
+            emit ownerCollectAssets(totalUSDC, _remainingSatisTokens);
+        } else {
+            emit ownerCollectAssets(totalUSDC, 0);
         }
-        totalUSDC = 0;
-        totalSatisTokenSupply = 0;
+        ownerCollectionBoolean = 1;
     }
 
 }
