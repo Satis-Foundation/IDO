@@ -552,7 +552,7 @@ contract satisIDO {
 
     address public owner;
     address public usdcAddressL1 = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // Ethereum L1 USDC address, edit if need.
-    address public satisTokenAddress = 0x925181b7Ed20c27ca7Cfa8156f62e0B9Df46c22B; // Ethereum L1 Satis token address, input need.
+    address public satisTokenAddress = 0xe47bA1BfF1a539B8B6A89FcCea3fEcdfbC765674; // Ethereum L1 Satis token address, input need.
     IERC20 usdcToken = IERC20(usdcAddressL1);
     IERC20 satisToken = IERC20(satisTokenAddress);
     mapping (address => uint256) EOA_whiteList;
